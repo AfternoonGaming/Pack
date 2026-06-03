@@ -1,12 +1,12 @@
-# Setup Guide
+# Setup Guide - Google Colab Edition
 
 ## Prerequisites
 
 - **Node.js** (v14+)
 - **npm** or **yarn**
 - **MySQL** database
-- **Java 17+** (for server runtime)
-- **Android device** with Termux installed (for server deployment)
+- **Free Google Account** (for Colab)
+- **Free ngrok Account** (for tunneling)
 
 ---
 
@@ -41,12 +41,6 @@ JWT_EXPIRE=7d
 
 ### 3. Create Database
 
-```bash
-mysql -u root -p < setup/database.sql
-```
-
-Or manually create:
-
 ```sql
 CREATE DATABASE minecraft_manager;
 USE minecraft_manager;
@@ -66,14 +60,13 @@ CREATE TABLE servers (
   server_name VARCHAR(255) NOT NULL,
   ip_address VARCHAR(45),
   port INT NOT NULL,
-  tunnel_token VARCHAR(255),
-  status ENUM('running', 'stopped', 'error') DEFAULT 'stopped',
+  colab_url VARCHAR(500),
+  status ENUM('stopped', 'running', 'error') DEFAULT 'stopped',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_user_id (user_id)
 );
-
-CREATE INDEX idx_user_id ON servers(user_id);
 ```
 
 ### 4. Start Backend
@@ -97,12 +90,10 @@ npm install
 
 ### 2. Configure API Endpoint
 
-Edit `mobile/src/screens/LoginScreen.js` and update:
+Edit `mobile/src/screens/LoginScreen.js`:
 ```javascript
 const API_BASE_URL = 'http://your-backend-api.com/api';
 ```
-
-Replace with your actual backend URL.
 
 ### 3. Run on Android
 
@@ -110,92 +101,119 @@ Replace with your actual backend URL.
 npx react-native run-android
 ```
 
-Or with Expo:
-```bash
-expo start
-```
+---
+
+## How Users Run a Server
+
+### Step 1: User creates server in app
+- Opens app → Dashboard → "+ Add Server"
+- Enters server name → "Create"
+- Backend generates Google Colab notebook link
+
+### Step 2: User gets ngrok token (one-time)
+- Visit https://dashboard.ngrok.com/auth
+- Sign up free
+- Copy auth token
+
+### Step 3: User opens Colab notebook
+- Click "Open in Colab" link from app
+- Paste ngrok token in first cell
+- Run all cells (⏯️ buttons)
+- Wait ~30 seconds
+- Colab shows public IP:port
+
+### Step 4: Share with friends
+- Friends join via IP:port
+- Server keeps running while Colab is open
+- Can leave browser tab open or use Colab background execution
 
 ---
 
-## Termux Server Setup
+## Cost Analysis
 
-### 1. Install Termux
-
-Download from [Google Play Store](https://play.google.com/store/apps/details?id=com.termux) or [F-Droid](https://f-droid.org/)
-
-### 2. Run Setup Script
-
-```bash
-# Open Termux and run:
-bash install-java.sh
-```
-
-### 3. Copy Server Files
-
-Copy your server JAR file to `~/minecraft-server/` in Termux.
-
-### 4. Configure playit.gg
-
-```bash
-bash tunnel-setup.sh
-```
-
-Follow the setup wizard to create an account and get your tunnel IP.
-
-### 5. Start Server
-
-```bash
-bash start-server.sh
-```
+✅ **FREE** - Google Colab (3 notebooks at once)
+✅ **FREE** - ngrok (1 public tunnel)
+✅ **FREE** - Backend (if deployed on free tier)
+💰 **REVENUE** - AdMob ads on mobile app
 
 ---
 
-## Database Setup
+## Scaling
 
-### Create Backup
+### Free Tier Limits:
+- **Google Colab**: 3 concurrent notebooks (upgrade for more)
+- **ngrok**: 1 public tunnel per account (upgrade for more)
+- **Backend**: Deploy on free tier (Render, Railway, Heroku)
 
-```bash
-mysqldump -u root -p minecraft_manager > backup.sql
-```
-
-### Restore from Backup
-
-```bash
-mysql -u root -p minecraft_manager < backup.sql
-```
+### To Scale:
+1. Users need their own ngrok accounts (free, unlimited)
+2. Deploy backend to cloud
+3. Database hosted in cloud
+4. Each user runs their own Colab notebook
 
 ---
 
 ## Troubleshooting
 
 ### Backend won't start
-- Check if port 5000 is in use: `lsof -i :5000`
-- Verify MySQL is running
-- Check database credentials in `.env`
+```bash
+# Check port
+lsof -i :5000
 
-### App can't connect to backend
-- Ensure backend is running
-- Check API_BASE_URL is correct
-- Verify network connectivity
-- Check firewall settings
+# Check MySQL
+mysql -u root -p
+```
 
-### Termux Java errors
-- Update packages: `apt update && apt upgrade`
-- Verify Java: `java -version`
-- Check available storage in Termux
+### App can't connect
+- Verify API_BASE_URL is correct
+- Check backend is running
+- Check firewall/network
 
-### Server won't start on Termux
-- Verify server.jar is in `~/minecraft-server/`
-- Check Java is installed: `java -version`
-- Review `eula.txt` is set to `true`
-- Check port is not in use: `netstat -tlnp`
+### Colab server won't start
+- Verify ngrok token is valid
+- Check internet connection in Colab
+- Ensure Java installed: `!java -version`
+- Check server logs: `/content/minecraft-server/server.log`
+
+### Server shows running but can't connect
+- Verify ngrok tunnel is active
+- Check firewall isn't blocking
+- Try restarting Colab notebook
 
 ---
 
 ## Next Steps
 
-1. Test backend API with Postman
-2. Deploy backend to cloud (Heroku, Railway, AWS)
-3. Build and deploy mobile app (Google Play, F-Droid)
-4. Integrate AdMob for monetization
-5. Add more features (console access, player management, etc.)
+1. ✅ Set up backend locally
+2. ✅ Configure MySQL
+3. ✅ Test API endpoints
+4. [ ] Deploy backend to cloud
+5. [ ] Build mobile app
+6. [ ] Add AdMob ads
+7. [ ] Publish to Google Play
+8. [ ] Marketing & growth
+
+---
+
+## Architecture Diagram
+
+```
+User App                  Backend API            Google Colab
+┌──────────────┐         ┌──────────────┐       ┌──────────────┐
+│ Register     │────────→│ Auth         │       │              │
+│ Login        │         │ Server Mgmt  │       │              │
+└──────────────┘         └──────────────┘       │              │
+       ↓                         ↓              │              │
+┌──────────────┐         ┌──────────────┐       │              │
+│ Create Server│────────→│ Generate URL │       │              │
+│              │         └──────────────┘       │              │
+└──────────────┘                ↓              │              │
+       ↓              Colab Notebook URL       │              │
+       └─────────────────────────────────────→ │ Run Notebook │
+                                               │ Start Server │
+                                               │ Setup ngrok  │
+       ┌──────────────┐         ┌──────────────┐               │
+       │ View IP:port │←────────│ Update Status│←──────────────┘
+       │ Share        │         │              │
+       └──────────────┘         └──────────────┘
+```

@@ -9,6 +9,8 @@ import {
   ActivityIndicator,
   Modal,
   TextInput,
+  Linking,
+  Alert,
 } from 'react-native';
 import axios from 'axios';
 import { COLORS, SIZES } from '../theme/colors';
@@ -24,11 +26,13 @@ export default function DashboardScreen({ route, navigation }) {
 
   useEffect(() => {
     fetchServers();
+    // Refresh every 10 seconds
+    const interval = setInterval(fetchServers, 10000);
+    return () => clearInterval(interval);
   }, []);
 
   const fetchServers = async () => {
     try {
-      setLoading(true);
       const response = await axios.get(`${API_BASE_URL}/servers`, {
         headers: { Authorization: `Bearer ${authToken}` }
       });
@@ -44,55 +48,77 @@ export default function DashboardScreen({ route, navigation }) {
     if (!serverName.trim()) return;
 
     try {
-      await axios.post(
+      const response = await axios.post(
         `${API_BASE_URL}/servers`,
         { server_name: serverName },
         { headers: { Authorization: `Bearer ${authToken}` } }
       );
+      
+      const { server, colab_url } = response.data;
+      
       setServerName('');
       setModalVisible(false);
+      
+      // Show instructions and open Colab
+      Alert.alert(
+        'Server Created!',
+        'Click "Open Colab" to start your server. You\'ll need your free ngrok token from https://dashboard.ngrok.com/auth',
+        [
+          { text: 'Cancel', onPress: () => {} },
+          { 
+            text: 'Open Colab', 
+            onPress: () => {
+              Linking.openURL(colab_url);
+            }
+          }
+        ]
+      );
+      
       fetchServers();
     } catch (error) {
-      console.error('Failed to create server:', error);
+      Alert.alert('Error', 'Failed to create server: ' + error.message);
     }
   };
 
-  const toggleServerStatus = async (serverId, currentStatus) => {
-    const newStatus = currentStatus === 'running' ? 'stop' : 'start';
-    try {
-      await axios.post(
-        `${API_BASE_URL}/servers/${serverId}/${newStatus}`,
-        {},
-        { headers: { Authorization: `Bearer ${authToken}` } }
-      );
-      fetchServers();
-    } catch (error) {
-      console.error('Failed to toggle server:', error);
-    }
+  const openColabNotebook = (colabUrl) => {
+    Linking.openURL(colabUrl);
   };
 
   const renderServerCard = ({ item }) => (
     <View style={styles.serverCard}>
       <View style={styles.cardHeader}>
         <Text style={styles.serverName}>{item.server_name}</Text>
-        <View style={[styles.statusBadge, item.status === 'running' ? styles.statusRunning : styles.statusStopped]}>
+        <View style={[
+          styles.statusBadge, 
+          item.status === 'running' ? styles.statusRunning : 
+          item.status === 'stopped' ? styles.statusStopped :
+          styles.statusError
+        ]}>
           <Text style={styles.statusText}>{item.status.toUpperCase()}</Text>
         </View>
       </View>
 
-      <Text style={styles.cardInfo}>Port: {item.port}</Text>
-      <Text style={styles.cardInfo}>ID: {item.id.substring(0, 8)}</Text>
+      {item.ip_address ? (
+        <>
+          <Text style={styles.cardInfo}>🎮 Connection: {item.ip_address}</Text>
+          <TouchableOpacity 
+            style={styles.copyButton}
+            onPress={() => {
+              Alert.alert('Copied!', `Share this with friends: ${item.ip_address}`);
+            }}
+          >
+            <Text style={styles.copyButtonText}>📋 Copy Address</Text>
+          </TouchableOpacity>
+        </>
+      ) : (
+        <Text style={styles.cardInfo}>Port: {item.port}</Text>
+      )}
 
       <TouchableOpacity
-        style={[
-          styles.toggleButton,
-          item.status === 'running' ? styles.stopButton : styles.startButton
-        ]}
-        onPress={() => toggleServerStatus(item.id, item.status)}
+        style={styles.colabButton}
+        onPress={() => openColabNotebook(item.colab_url)}
       >
-        <Text style={styles.buttonText}>
-          {item.status === 'running' ? '⏹ Stop' : '▶ Start'}
-        </Text>
+        <Text style={styles.colabButtonText}>🚀 Open Colab Notebook</Text>
       </TouchableOpacity>
     </View>
   );
@@ -113,7 +139,7 @@ export default function DashboardScreen({ route, navigation }) {
           style={styles.addButton}
           onPress={() => setModalVisible(true)}
         >
-          <Text style={styles.addButtonText}>+ Add Server</Text>
+          <Text style={styles.addButtonText}>+ New Server</Text>
         </TouchableOpacity>
       </View>
 
@@ -122,10 +148,13 @@ export default function DashboardScreen({ route, navigation }) {
         renderItem={renderServerCard}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
+        refreshing={loading}
+        onRefresh={fetchServers}
         ListEmptyComponent={
           <View style={styles.emptyState}>
             <Text style={styles.emptyText}>No servers yet</Text>
             <Text style={styles.emptySubtext}>Create one to get started!</Text>
+            <Text style={styles.emptyHint}>Runs on free Google Colab 🎉</Text>
           </View>
         }
       />
@@ -140,10 +169,14 @@ export default function DashboardScreen({ route, navigation }) {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Create New Server</Text>
+            
+            <Text style={styles.modalHint}>
+              Server will run on Google Colab (free) with ngrok tunneling
+            </Text>
 
             <TextInput
               style={styles.modalInput}
-              placeholder="Server Name"
+              placeholder="Server Name (e.g., Survival SMP)"
               placeholderTextColor={COLORS.mutedText}
               value={serverName}
               onChangeText={setServerName}
@@ -232,6 +265,9 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.success,
   },
   statusStopped: {
+    backgroundColor: COLORS.warning,
+  },
+  statusError: {
     backgroundColor: COLORS.error,
   },
   statusText: {
@@ -242,23 +278,30 @@ const styles = StyleSheet.create({
   cardInfo: {
     fontSize: SIZES.sm,
     color: COLORS.mutedText,
-    marginBottom: SIZES.xs,
+    marginBottom: SIZES.md,
   },
-  toggleButton: {
+  copyButton: {
+    backgroundColor: COLORS.info,
+    paddingVertical: SIZES.sm,
+    borderRadius: 6,
+    alignItems: 'center',
+    marginBottom: SIZES.md,
+  },
+  copyButtonText: {
+    color: COLORS.lightText,
+    fontWeight: '600',
+    fontSize: SIZES.sm,
+  },
+  colabButton: {
+    backgroundColor: COLORS.primary,
     paddingVertical: SIZES.md,
     borderRadius: 6,
     alignItems: 'center',
-    marginTop: SIZES.md,
   },
-  startButton: {
-    backgroundColor: COLORS.success,
-  },
-  stopButton: {
-    backgroundColor: COLORS.error,
-  },
-  buttonText: {
+  colabButtonText: {
     color: COLORS.lightText,
     fontWeight: 'bold',
+    fontSize: SIZES.md,
   },
   emptyState: {
     alignItems: 'center',
@@ -274,6 +317,12 @@ const styles = StyleSheet.create({
   emptySubtext: {
     fontSize: SIZES.md,
     color: COLORS.mutedText,
+    marginBottom: SIZES.md,
+  },
+  emptyHint: {
+    fontSize: SIZES.sm,
+    color: COLORS.success,
+    fontWeight: '600',
   },
   modalOverlay: {
     flex: 1,
@@ -285,14 +334,20 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.surface,
     borderRadius: 12,
     padding: SIZES.lg,
-    width: '80%',
+    width: '85%',
     elevation: 5,
   },
   modalTitle: {
     fontSize: SIZES.lg,
     fontWeight: 'bold',
     color: COLORS.text,
+    marginBottom: SIZES.md,
+  },
+  modalHint: {
+    fontSize: SIZES.sm,
+    color: COLORS.mutedText,
     marginBottom: SIZES.lg,
+    fontStyle: 'italic',
   },
   modalInput: {
     borderWidth: 1,

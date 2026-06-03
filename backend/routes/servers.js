@@ -23,7 +23,7 @@ router.get('/', authMiddleware, async (req, res) => {
   }
 });
 
-// Create new server
+// Create new server (generates Colab notebook URL)
 router.post('/', authMiddleware, async (req, res) => {
   try {
     const { server_name } = req.body;
@@ -35,21 +35,24 @@ router.post('/', authMiddleware, async (req, res) => {
     const connection = await db.getConnection();
     const serverId = uuidv4();
     const port = Math.floor(Math.random() * (30000 - 25565 + 1)) + 25565;
+    const colabNotebookUrl = `https://colab.research.google.com/notebook#create=true&import=https%3A%2F%2Fraw.githubusercontent.com%2FAfternoonGaming%2FPack%2Fmain%2Fcolab-setup%2Fsetup-notebook.ipynb`;
 
     const [result] = await connection.query(
-      'INSERT INTO servers (id, user_id, server_name, port, status) VALUES (?, ?, ?, ?, ?)',
-      [serverId, req.user.userId, server_name, port, 'stopped']
+      'INSERT INTO servers (id, user_id, server_name, port, status, colab_url) VALUES (?, ?, ?, ?, ?, ?)',
+      [serverId, req.user.userId, server_name, port, 'stopped', colabNotebookUrl]
     );
 
     connection.release();
 
     res.status(201).json({
-      message: 'Server created successfully',
+      message: 'Server created successfully. Open the notebook link to start!',
       server: {
         id: serverId,
         server_name,
         port,
-        status: 'stopped'
+        status: 'stopped',
+        colab_url: colabNotebookUrl,
+        instructions: 'Click the Colab link to open the notebook, enter your ngrok token, and run the cells!'
       }
     });
   } catch (error) {
@@ -58,43 +61,33 @@ router.post('/', authMiddleware, async (req, res) => {
   }
 });
 
-// Start server
-router.post('/:serverId/start', authMiddleware, async (req, res) => {
+// Update server status (called from Colab)
+router.post('/:serverId/update-status', async (req, res) => {
   try {
     const { serverId } = req.params;
+    const { status, public_url } = req.body;
+    
     const connection = await db.getConnection();
 
-    // Verify server belongs to user
-    const [servers] = await connection.query(
-      'SELECT * FROM servers WHERE id = ? AND user_id = ?',
-      [serverId, req.user.userId]
-    );
-
-    if (servers.length === 0) {
-      connection.release();
-      return res.status(404).json({ error: 'Server not found' });
-    }
-
-    // Update status
     await connection.query(
-      'UPDATE servers SET status = ? WHERE id = ?',
-      ['running', serverId]
+      'UPDATE servers SET status = ?, ip_address = ?, updated_at = NOW() WHERE id = ?',
+      [status, public_url || null, serverId]
     );
 
     connection.release();
 
     res.json({
-      message: 'Server started',
-      status: 'running'
+      message: `Server status updated to ${status}`,
+      status
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Failed to start server' });
+    res.status(500).json({ error: 'Failed to update server status' });
   }
 });
 
-// Stop server
-router.post('/:serverId/stop', authMiddleware, async (req, res) => {
+// Get server details with Colab link
+router.get('/:serverId', authMiddleware, async (req, res) => {
   try {
     const { serverId } = req.params;
     const connection = await db.getConnection();
@@ -104,25 +97,16 @@ router.post('/:serverId/stop', authMiddleware, async (req, res) => {
       [serverId, req.user.userId]
     );
 
+    connection.release();
+
     if (servers.length === 0) {
-      connection.release();
       return res.status(404).json({ error: 'Server not found' });
     }
 
-    await connection.query(
-      'UPDATE servers SET status = ? WHERE id = ?',
-      ['stopped', serverId]
-    );
-
-    connection.release();
-
-    res.json({
-      message: 'Server stopped',
-      status: 'stopped'
-    });
+    res.json(servers[0]);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Failed to stop server' });
+    res.status(500).json({ error: 'Failed to fetch server' });
   }
 });
 
