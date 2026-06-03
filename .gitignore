@@ -1,0 +1,35 @@
+# Backend
+backend/node_modules/
+backend/.env
+backend/.env.local
+backend/npm-debug.log
+backend/yarn-error.log
+backend/dist/
+backend/build/
+
+# Mobile
+mobile/node_modules/
+mobile/.expo/
+mobile/.expo-shared/
+mobile/dist/
+mobile/npm-debug.log
+mobile/yarn-error.log
+mobile/android/
+mobile/ios/
+
+# System
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.env.local
+.env.*.local
+
+# Database
+*.sql
+backup.sql
+
+# Termux
+termucker-setup/node_modules/
