@@ -13,7 +13,7 @@ export default function LoginScreen({ navigation }) {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      setError('Please fill in all fields');
+      setError('⚠️  Fill in all fields');
       return;
     }
 
@@ -26,11 +26,9 @@ export default function LoginScreen({ navigation }) {
         password,
       });
 
-      // Store token and navigate to dashboard
-      // await AsyncStorage.setItem('authToken', response.data.token);
       navigation.replace('Dashboard', { user: response.data.user, authToken: response.data.token });
     } catch (err) {
-      setError(err.response?.data?.error || 'Login failed');
+      setError(`❌ ${err.response?.data?.error || 'Login failed'}`);
     } finally {
       setLoading(false);
     }
@@ -42,30 +40,41 @@ export default function LoginScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>🎮 Minecraft Manager</Text>
+      <View style={styles.titleContainer}>
+        <Text style={styles.title}>{'< MINECRAFT_SERVER_MANAGER />'}</Text>
+        <Text style={styles.subtitle}>[HACKER MODE ACTIVATED]</Text>
+      </View>
       
       <View style={styles.form}>
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          placeholderTextColor={COLORS.mutedText}
-          value={email}
-          onChangeText={setEmail}
-          editable={!loading}
-          keyboardType="email-address"
-        />
+        <View style={styles.inputWrapper}>
+          <Text style={styles.label}>&gt; EMAIL:</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="user@domain.com"
+            placeholderTextColor={COLORS.textMuted}
+            value={email}
+            onChangeText={setEmail}
+            editable={!loading}
+            keyboardType="email-address"
+          />
+        </View>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          placeholderTextColor={COLORS.mutedText}
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          editable={!loading}
-        />
+        <View style={styles.inputWrapper}>
+          <Text style={styles.label}>&gt; PASSWORD:</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="••••••••••••••"
+            placeholderTextColor={COLORS.textMuted}
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            editable={!loading}
+          />
+        </View>
 
-        {error ? <Text style={styles.error}>{error}</Text> : null}
+        {error ? (
+          <Text style={styles.error}>{error}</Text>
+        ) : null}
 
         <TouchableOpacity
           style={[styles.button, styles.loginButton, loading && styles.disabled]}
@@ -73,20 +82,22 @@ export default function LoginScreen({ navigation }) {
           disabled={loading}
         >
           {loading ? (
-            <ActivityIndicator color={COLORS.lightText} />
+            <ActivityIndicator color={COLORS.neonGreen} />
           ) : (
-            <Text style={styles.buttonText}>Login</Text>
+            <>
+              <Text style={styles.buttonPrefix}>[</Text>
+              <Text style={styles.buttonText}>LOGIN</Text>
+              <Text style={styles.buttonPrefix}>]</Text>
+            </>
           )}
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.button, styles.registerButton]}
+          style={styles.registerButton}
           onPress={handleRegister}
           disabled={loading}
         >
-          <Text style={[styles.buttonText, { color: COLORS.primary }]}>
-            Create Account
-          </Text>
+          <Text style={styles.registerText}>[CREATE ACCOUNT]</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -96,56 +107,113 @@ export default function LoginScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: COLORS.darkBg,
     justifyContent: 'center',
-    padding: SIZES.md,
+    padding: SIZES.lg,
+  },
+  titleContainer: {
+    marginBottom: SIZES.xl * 2,
   },
   title: {
     fontSize: SIZES.xl,
     fontWeight: 'bold',
-    color: COLORS.primary,
+    color: COLORS.neonGreen,
     textAlign: 'center',
-    marginBottom: SIZES.xl,
+    fontFamily: 'monospace',
+    letterSpacing: 2,
+  },
+  subtitle: {
+    fontSize: SIZES.md,
+    color: COLORS.neonCyan,
+    textAlign: 'center',
+    marginTop: SIZES.md,
+    fontFamily: 'monospace',
+    opacity: 0.8,
   },
   form: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 8,
+    backgroundColor: COLORS.darkPanel,
+    borderRadius: 0,
     padding: SIZES.lg,
-    elevation: 3,
+    borderWidth: 2,
+    borderColor: COLORS.neonGreen,
+    shadowColor: COLORS.neonGreen,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  inputWrapper: {
+    marginBottom: SIZES.lg,
+  },
+  label: {
+    color: COLORS.neonCyan,
+    fontSize: SIZES.sm,
+    marginBottom: SIZES.sm,
+    fontFamily: 'monospace',
+    fontWeight: '600',
   },
   input: {
     borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 6,
+    borderColor: COLORS.neonGreen,
+    backgroundColor: COLORS.darkInput,
     paddingHorizontal: SIZES.md,
-    paddingVertical: SIZES.sm,
-    marginBottom: SIZES.md,
+    paddingVertical: SIZES.md,
+    marginBottom: 0,
     fontSize: SIZES.md,
-    color: COLORS.text,
+    color: COLORS.textBright,
+    fontFamily: 'monospace',
   },
   error: {
     color: COLORS.error,
     marginBottom: SIZES.md,
     fontSize: SIZES.sm,
+    fontFamily: 'monospace',
   },
   button: {
     paddingVertical: SIZES.md,
-    borderRadius: 6,
+    borderRadius: 0,
     alignItems: 'center',
-    marginTop: SIZES.md,
+    marginTop: SIZES.lg,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    borderWidth: 2,
   },
   loginButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.darkInput,
+    borderColor: COLORS.neonGreen,
+    shadowColor: COLORS.neonGreen,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  registerButton: {
-    backgroundColor: COLORS.background,
-    borderWidth: 1,
-    borderColor: COLORS.primary,
+  buttonPrefix: {
+    color: COLORS.neonGreen,
+    fontSize: SIZES.lg,
+    fontWeight: 'bold',
+    marginHorizontal: SIZES.sm,
   },
   buttonText: {
-    color: COLORS.lightText,
+    color: COLORS.neonGreen,
+    fontSize: SIZES.md,
+    fontWeight: '700',
+    fontFamily: 'monospace',
+    letterSpacing: 1,
+  },
+  registerButton: {
+    paddingVertical: SIZES.md,
+    marginTop: SIZES.md,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.neonCyan,
+    borderRadius: 0,
+  },
+  registerText: {
+    color: COLORS.neonCyan,
     fontSize: SIZES.md,
     fontWeight: '600',
+    fontFamily: 'monospace',
+    letterSpacing: 1,
   },
   disabled: {
     opacity: 0.6,

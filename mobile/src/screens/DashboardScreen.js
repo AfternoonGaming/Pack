@@ -26,7 +26,6 @@ export default function DashboardScreen({ route, navigation }) {
 
   useEffect(() => {
     fetchServers();
-    // Refresh every 10 seconds
     const interval = setInterval(fetchServers, 10000);
     return () => clearInterval(interval);
   }, []);
@@ -54,19 +53,18 @@ export default function DashboardScreen({ route, navigation }) {
         { headers: { Authorization: `Bearer ${authToken}` } }
       );
       
-      const { server, colab_url } = response.data;
+      const colab_url = response.data.server.colab_url;
       
       setServerName('');
       setModalVisible(false);
       
-      // Show instructions and open Colab
       Alert.alert(
-        'Server Created!',
-        'Click "Open Colab" to start your server. You\'ll need your free ngrok token from https://dashboard.ngrok.com/auth',
+        '✓ SERVER INITIALIZED',
+        'Open Google Colab notebook. Paste your free ngrok token from https://dashboard.ngrok.com/auth and run all cells.',
         [
           { text: 'Cancel', onPress: () => {} },
           { 
-            text: 'Open Colab', 
+            text: '[LAUNCH COLAB]', 
             onPress: () => {
               Linking.openURL(colab_url);
             }
@@ -76,7 +74,7 @@ export default function DashboardScreen({ route, navigation }) {
       
       fetchServers();
     } catch (error) {
-      Alert.alert('Error', 'Failed to create server: ' + error.message);
+      Alert.alert('ERROR', `Failed to create server: ${error.message}`);
     }
   };
 
@@ -87,38 +85,38 @@ export default function DashboardScreen({ route, navigation }) {
   const renderServerCard = ({ item }) => (
     <View style={styles.serverCard}>
       <View style={styles.cardHeader}>
-        <Text style={styles.serverName}>{item.server_name}</Text>
+        <Text style={styles.serverName}>[{item.server_name}]</Text>
         <View style={[
           styles.statusBadge, 
           item.status === 'running' ? styles.statusRunning : 
           item.status === 'stopped' ? styles.statusStopped :
           styles.statusError
         ]}>
-          <Text style={styles.statusText}>{item.status.toUpperCase()}</Text>
+          <Text style={styles.statusText}>{item.status}</Text>
         </View>
       </View>
 
       {item.ip_address ? (
         <>
-          <Text style={styles.cardInfo}>🎮 Connection: {item.ip_address}</Text>
+          <Text style={styles.cardInfo}>➜ {item.ip_address}</Text>
           <TouchableOpacity 
             style={styles.copyButton}
             onPress={() => {
-              Alert.alert('Copied!', `Share this with friends: ${item.ip_address}`);
+              Alert.alert('✓ COPIED', `${item.ip_address}`);
             }}
           >
-            <Text style={styles.copyButtonText}>📋 Copy Address</Text>
+            <Text style={styles.copyButtonText}>[COPY ADDRESS]</Text>
           </TouchableOpacity>
         </>
       ) : (
-        <Text style={styles.cardInfo}>Port: {item.port}</Text>
+        <Text style={styles.cardInfo}>PORT: {item.port}</Text>
       )}
 
       <TouchableOpacity
         style={styles.colabButton}
         onPress={() => openColabNotebook(item.colab_url)}
       >
-        <Text style={styles.colabButtonText}>🚀 Open Colab Notebook</Text>
+        <Text style={styles.colabButtonText}>[OPEN COLAB]</Text>
       </TouchableOpacity>
     </View>
   );
@@ -126,7 +124,7 @@ export default function DashboardScreen({ route, navigation }) {
   if (loading) {
     return (
       <View style={styles.container}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
+        <ActivityIndicator size="large" color={COLORS.neonGreen} />
       </View>
     );
   }
@@ -134,12 +132,12 @@ export default function DashboardScreen({ route, navigation }) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>🎮 Your Servers</Text>
+        <Text style={styles.headerTitle}>{'[ MINECRAFT_INSTANCES ]'}</Text>
         <TouchableOpacity
           style={styles.addButton}
           onPress={() => setModalVisible(true)}
         >
-          <Text style={styles.addButtonText}>+ New Server</Text>
+          <Text style={styles.addButtonText}>[+ NEW SERVER]</Text>
         </TouchableOpacity>
       </View>
 
@@ -152,9 +150,9 @@ export default function DashboardScreen({ route, navigation }) {
         onRefresh={fetchServers}
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>No servers yet</Text>
-            <Text style={styles.emptySubtext}>Create one to get started!</Text>
-            <Text style={styles.emptyHint}>Runs on free Google Colab 🎉</Text>
+            <Text style={styles.emptyText}>{'> NO SERVERS FOUND'}</Text>
+            <Text style={styles.emptySubtext}>INITIALIZE NEW INSTANCE</Text>
+            <Text style={styles.emptyHint}>Google Colab • ngrok • FREE</Text>
           </View>
         }
       />
@@ -168,16 +166,16 @@ export default function DashboardScreen({ route, navigation }) {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Create New Server</Text>
+            <Text style={styles.modalTitle}>[INITIALIZE SERVER]</Text>
             
             <Text style={styles.modalHint}>
-              Server will run on Google Colab (free) with ngrok tunneling
+              Running on Google Colab • Tunneled via ngrok
             </Text>
 
             <TextInput
               style={styles.modalInput}
-              placeholder="Server Name (e.g., Survival SMP)"
-              placeholderTextColor={COLORS.mutedText}
+              placeholder="SERVER_NAME"
+              placeholderTextColor={COLORS.textMuted}
               value={serverName}
               onChangeText={setServerName}
             />
@@ -187,14 +185,14 @@ export default function DashboardScreen({ route, navigation }) {
                 style={[styles.modalButton, styles.cancelButton]}
                 onPress={() => setModalVisible(false)}
               >
-                <Text style={styles.modalButtonText}>Cancel</Text>
+                <Text style={styles.cancelButtonText}>[CANCEL]</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[styles.modalButton, styles.createButton]}
                 onPress={createServer}
               >
-                <Text style={styles.modalButtonText}>Create</Text>
+                <Text style={styles.createButtonText}>[CREATE]</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -207,42 +205,58 @@ export default function DashboardScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: COLORS.darkBg,
   },
   header: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.darkPanel,
     padding: SIZES.lg,
     paddingTop: SIZES.xl,
+    borderBottomWidth: 2,
+    borderBottomColor: COLORS.neonGreen,
   },
   headerTitle: {
     fontSize: SIZES.lg,
     fontWeight: 'bold',
-    color: COLORS.lightText,
+    color: COLORS.neonGreen,
     marginBottom: SIZES.md,
+    fontFamily: 'monospace',
+    letterSpacing: 1,
   },
   addButton: {
-    backgroundColor: COLORS.success,
+    backgroundColor: COLORS.darkInput,
     paddingVertical: SIZES.md,
     paddingHorizontal: SIZES.lg,
-    borderRadius: 6,
+    borderRadius: 0,
     alignItems: 'center',
+    borderWidth: 2,
+    borderColor: COLORS.neonCyan,
+    shadowColor: COLORS.neonCyan,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
   addButtonText: {
-    color: COLORS.lightText,
+    color: COLORS.neonCyan,
     fontWeight: 'bold',
     fontSize: SIZES.md,
+    fontFamily: 'monospace',
+    letterSpacing: 1,
   },
   listContent: {
     padding: SIZES.md,
   },
   serverCard: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 8,
+    backgroundColor: COLORS.darkPanel,
+    borderRadius: 0,
     padding: SIZES.lg,
     marginBottom: SIZES.lg,
+    borderWidth: 2,
+    borderColor: COLORS.neonGreen,
+    shadowColor: COLORS.neonGreen,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
     elevation: 2,
-    borderLeftWidth: 4,
-    borderLeftColor: COLORS.primary,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -253,55 +267,73 @@ const styles = StyleSheet.create({
   serverName: {
     fontSize: SIZES.md,
     fontWeight: 'bold',
-    color: COLORS.text,
+    color: COLORS.neonGreen,
     flex: 1,
+    fontFamily: 'monospace',
   },
   statusBadge: {
     paddingVertical: SIZES.xs,
     paddingHorizontal: SIZES.sm,
-    borderRadius: 4,
+    borderRadius: 0,
+    borderWidth: 1,
   },
   statusRunning: {
-    backgroundColor: COLORS.success,
+    backgroundColor: 'transparent',
+    borderColor: COLORS.neonGreen,
   },
   statusStopped: {
-    backgroundColor: COLORS.warning,
+    backgroundColor: 'transparent',
+    borderColor: COLORS.neonOrange,
   },
   statusError: {
-    backgroundColor: COLORS.error,
+    backgroundColor: 'transparent',
+    borderColor: COLORS.error,
   },
   statusText: {
-    color: COLORS.lightText,
+    color: COLORS.neonGreen,
     fontSize: SIZES.sm,
     fontWeight: 'bold',
+    fontFamily: 'monospace',
   },
   cardInfo: {
     fontSize: SIZES.sm,
-    color: COLORS.mutedText,
+    color: COLORS.neonCyan,
     marginBottom: SIZES.md,
+    fontFamily: 'monospace',
   },
   copyButton: {
-    backgroundColor: COLORS.info,
+    backgroundColor: COLORS.darkInput,
     paddingVertical: SIZES.sm,
-    borderRadius: 6,
+    borderRadius: 0,
     alignItems: 'center',
     marginBottom: SIZES.md,
+    borderWidth: 1,
+    borderColor: COLORS.neonCyan,
   },
   copyButtonText: {
-    color: COLORS.lightText,
+    color: COLORS.neonCyan,
     fontWeight: '600',
     fontSize: SIZES.sm,
+    fontFamily: 'monospace',
   },
   colabButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.darkInput,
     paddingVertical: SIZES.md,
-    borderRadius: 6,
+    borderRadius: 0,
     alignItems: 'center',
+    borderWidth: 2,
+    borderColor: COLORS.neonGreen,
+    shadowColor: COLORS.neonGreen,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
   colabButtonText: {
-    color: COLORS.lightText,
+    color: COLORS.neonGreen,
     fontWeight: 'bold',
     fontSize: SIZES.md,
+    fontFamily: 'monospace',
+    letterSpacing: 1,
   },
   emptyState: {
     alignItems: 'center',
@@ -311,53 +343,65 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: SIZES.lg,
     fontWeight: 'bold',
-    color: COLORS.text,
+    color: COLORS.neonGreen,
     marginBottom: SIZES.sm,
+    fontFamily: 'monospace',
   },
   emptySubtext: {
     fontSize: SIZES.md,
-    color: COLORS.mutedText,
+    color: COLORS.neonCyan,
     marginBottom: SIZES.md,
+    fontFamily: 'monospace',
   },
   emptyHint: {
     fontSize: SIZES.sm,
-    color: COLORS.success,
-    fontWeight: '600',
+    color: COLORS.textDim,
+    fontFamily: 'monospace',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 12,
+    backgroundColor: COLORS.darkPanel,
+    borderRadius: 0,
     padding: SIZES.lg,
     width: '85%',
+    borderWidth: 2,
+    borderColor: COLORS.neonGreen,
+    shadowColor: COLORS.neonGreen,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.4,
+    shadowRadius: 15,
     elevation: 5,
   },
   modalTitle: {
     fontSize: SIZES.lg,
     fontWeight: 'bold',
-    color: COLORS.text,
+    color: COLORS.neonGreen,
     marginBottom: SIZES.md,
+    fontFamily: 'monospace',
+    letterSpacing: 1,
   },
   modalHint: {
     fontSize: SIZES.sm,
-    color: COLORS.mutedText,
+    color: COLORS.neonCyan,
     marginBottom: SIZES.lg,
-    fontStyle: 'italic',
+    fontFamily: 'monospace',
+    opacity: 0.8,
   },
   modalInput: {
     borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 6,
+    borderColor: COLORS.neonGreen,
+    backgroundColor: COLORS.darkInput,
     paddingHorizontal: SIZES.md,
-    paddingVertical: SIZES.sm,
+    paddingVertical: SIZES.md,
     marginBottom: SIZES.lg,
     fontSize: SIZES.md,
-    color: COLORS.text,
+    color: COLORS.textBright,
+    fontFamily: 'monospace',
   },
   modalButtons: {
     flexDirection: 'row',
@@ -367,19 +411,33 @@ const styles = StyleSheet.create({
   modalButton: {
     paddingVertical: SIZES.md,
     paddingHorizontal: SIZES.lg,
-    borderRadius: 6,
+    borderRadius: 0,
     minWidth: 100,
     alignItems: 'center',
+    borderWidth: 1,
   },
   cancelButton: {
-    backgroundColor: COLORS.border,
+    backgroundColor: COLORS.darkInput,
+    borderColor: COLORS.textDim,
   },
-  createButton: {
-    backgroundColor: COLORS.primary,
-  },
-  modalButtonText: {
+  cancelButtonText: {
     fontWeight: '600',
     fontSize: SIZES.md,
-    color: COLORS.text,
+    color: COLORS.textDim,
+    fontFamily: 'monospace',
+  },
+  createButton: {
+    backgroundColor: COLORS.darkInput,
+    borderColor: COLORS.neonGreen,
+    shadowColor: COLORS.neonGreen,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  createButtonText: {
+    fontWeight: '600',
+    fontSize: SIZES.md,
+    color: COLORS.neonGreen,
+    fontFamily: 'monospace',
   },
 });

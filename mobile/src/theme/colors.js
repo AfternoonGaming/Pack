@@ -1,44 +1,46 @@
-// Programmer Art Colors
-// Minecraft Classic Palette
+// Hacker Theme Colors
+// Dark, sleek, neon-inspired cyberpunk aesthetic
 
 export const COLORS = {
-  // Programmer Art Theme
-  grass: '#7CB342',      // Grass green
-  dirt: '#8B6914',       // Dirt brown
-  stone: '#999999',      // Stone gray
-  cobble: '#808080',     // Cobblestone
-  wood: '#8B4513',       // Wood brown
-  leaves: '#4CB050',     // Leaves green
-  water: '#0099CC',      // Water blue
-  lava: '#FF6600',       // Lava orange
-  sand: '#E6D5B8',       // Sand
+  // Primary Neon Colors
+  neonGreen: '#00FF00',      // Bright hacker green
+  neonCyan: '#00FFFF',       // Cyber cyan
+  neonPurple: '#FF00FF',     // Neon magenta
+  neonBlue: '#0080FF',       // Electric blue
+  neonPink: '#FF0080',       // Hot pink
+  neonOrange: '#FF6600',     // Orange glow
   
-  // UI Colors
-  primary: '#1976D2',    // Primary blue
-  success: '#43A047',    // Success green
-  error: '#D32F2F',      // Error red
-  warning: '#FB8C00',    // Warning orange
-  info: '#0097A7',       // Info cyan
+  // Dark Background
+  darkBg: '#0A0E27',         // Very dark navy
+  darkPanel: '#0F1419',      // Dark panel
+  darkInput: '#161B22',      // Dark input background
   
-  // Text
-  text: '#212121',       // Dark text
-  lightText: '#FFFFFF',  // Light text
-  mutedText: '#757575',  // Muted gray
+  // Text Colors
+  text: '#E0E0E0',           // Light gray text
+  textBright: '#FFFFFF',     // Pure white
+  textDim: '#808080',        // Dimmed gray
+  textMuted: '#555555',      // Very dim
   
-  // Background
-  background: '#FAFAFA', // Light background
-  surface: '#FFFFFF',    // Surface white
-  dark: '#1E1E1E',       // Dark background
+  // Status Colors
+  success: '#00FF00',        // Neon green
+  error: '#FF0055',          // Neon red
+  warning: '#FFAA00',        // Orange warning
+  info: '#00FFFF',           // Cyan info
   
-  // Borders
-  border: '#E0E0E0',     // Light border
-  darkBorder: '#424242', // Dark border
+  // Borders & Accents
+  border: '#1A1F3A',         // Subtle dark border
+  borderGlow: '#00FF00',     // Green glow border
+  shadow: 'rgba(0, 255, 0, 0.1)',  // Green shadow
+  
+  // Gradients
+  gradientStart: '#0A0E27',
+  gradientEnd: '#1A2847',
 };
 
 export const FONTS = {
-  pixelated: 'PressStart2P-Regular',
-  sans: 'Roboto',
-  mono: 'RobotoMono',
+  mono: 'Courier New',       // Monospace (hacker style)
+  monoAlt: 'Menlo',          // Alternative monospace
+  roboto: 'Roboto',          // Clean sans-serif
 };
 
 export const SIZES = {
@@ -48,4 +50,12 @@ export const SIZES = {
   lg: 20,
   xl: 24,
   xxl: 32,
+};
+
+export const SHADOWS = {
+  glowGreen: '0 0 10px rgba(0, 255, 0, 0.5)',
+  glowCyan: '0 0 10px rgba(0, 255, 255, 0.5)',
+  glowPurple: '0 0 10px rgba(255, 0, 255, 0.5)',
+  glowRed: '0 0 10px rgba(255, 0, 85, 0.5)',
+  glowOrange: '0 0 10px rgba(255, 102, 0, 0.5)',
 };
